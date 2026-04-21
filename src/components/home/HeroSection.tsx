@@ -1,194 +1,219 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import Link from "next/link";
-import { Phone, ArrowRight, Shield, ChevronDown } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
+import Image from "next/image";
+import { Phone, ArrowRight, ChevronDown } from "lucide-react";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { SITE_CONFIG } from "@/lib/constants";
 
-/* ─── VIDEO CONFIG ────────────────────────────────────────────────────────────
-   VIDEO_SRC: Obtain from Squarespace CMS source or directly from client.
-   The live site hosts a video at violet-ellipse-elh8.squarespace.com.
-   Client should provide the original video file (MP4 preferred) for hosting.
-   Until provided, the hero renders its premium dark gradient background.
-───────────────────────────────────────────────────────────────────────────── */
-const VIDEO_SRC = SITE_CONFIG.heroVideoSrc; // populated from constants.ts
-const VIDEO_POSTER = SITE_CONFIG.heroPosterImage;
+const HERO_BG =
+  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1920&q=80";
 
-const HERO_HEADLINE_TOP = "Excellence";
-const HERO_HEADLINE_BOTTOM = "In Protection";
-const HERO_SUBHEADLINE =
-  "In a world where risk is constantly changing, Stratton Security Group is your most reliable security partner — protecting people, assets, and peace of mind.";
+const LINE1 = ["Excellence"];
+const LINE2 = ["In", "Protection"];
 
 const TRUST_SIGNALS = [
   `CA PPO License #${SITE_CONFIG.licenseNumber}`,
   "24/7 · 365 Operations",
   "Licensed, Bonded & Insured",
-  "Serving Los Angeles & Southern California",
+  "Serving Los Angeles & SoCal",
 ];
 
 export default function HeroSection() {
-  const shouldReduceMotion = useReducedMotion();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoLoaded, setVideoLoaded] = useState(false);
-  const [videoError, setVideoError] = useState(false);
+  const prefersReduced = useReducedMotion();
+  const containerRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !VIDEO_SRC || shouldReduceMotion) return;
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"],
+  });
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "40%"]);
+  const bgScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
 
-    const onCanPlay = () => setVideoLoaded(true);
-    const onError = () => setVideoError(true);
-
-    video.addEventListener("canplay", onCanPlay);
-    video.addEventListener("error", onError);
-    return () => {
-      video.removeEventListener("canplay", onCanPlay);
-      video.removeEventListener("error", onError);
-    };
-  }, [shouldReduceMotion]);
-
-  const fadeUp = {
-    initial: shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 30 },
-    animate: { opacity: 1, y: 0 },
+  const wordVariant = {
+    hidden: prefersReduced ? { opacity: 0 } : { opacity: 0, rotateX: 90, y: 20 },
+    visible: { opacity: 1, rotateX: 0, y: 0 },
   };
 
   return (
     <section
-      className="relative min-h-dvh flex flex-col justify-center overflow-hidden"
+      ref={containerRef}
+      className="relative min-h-dvh flex flex-col justify-center overflow-hidden bg-[#080c12]"
       aria-label="Hero — Stratton Security Group"
     >
-      {/* ── Video / Poster background ─── */}
-      <div className="absolute inset-0 z-0">
-        {/* Fallback gradient background (always rendered) */}
-        <div className="absolute inset-0 bg-[#040c1a]" />
-
-        {/* Dark tactical overlay pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 2px,
-              rgba(255,255,255,0.03) 2px,
-              rgba(255,255,255,0.03) 4px
-            )`,
-          }}
+      {/* ── Parallax background ── */}
+      <motion.div
+        className="absolute inset-0 z-0"
+        style={prefersReduced ? {} : { y: bgY, scale: bgScale }}
+      >
+        <Image
+          src={HERO_BG}
+          alt=""
+          fill
+          priority
+          quality={85}
+          className="object-cover object-center"
+          sizes="100vw"
+          aria-hidden="true"
         />
+      </motion.div>
 
-        {/* Video element */}
-        {VIDEO_SRC && !videoError && !shouldReduceMotion && (
-          <video
-            ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{
-              opacity: videoLoaded ? 1 : 0,
-              transition: "opacity 1.2s ease",
-            }}
-            autoPlay
-            muted
-            loop
-            playsInline
-            poster={VIDEO_POSTER}
-            aria-hidden="true"
-            preload="metadata"
-          >
-            <source src={VIDEO_SRC} type="video/mp4" />
-          </video>
-        )}
+      {/* ── Tactical grid overlay ── */}
+      <div
+        className="absolute inset-0 z-[1] pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(196,154,42,0.045) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(196,154,42,0.045) 1px, transparent 1px)
+          `,
+          backgroundSize: "60px 60px",
+        }}
+        aria-hidden="true"
+      />
 
-        {/* Video gradient overlays — cinematic dark framing */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `
-              linear-gradient(
-                to bottom,
-                rgba(4, 12, 26, 0.75) 0%,
-                rgba(4, 12, 26, 0.45) 35%,
-                rgba(4, 12, 26, 0.45) 60%,
-                rgba(4, 12, 26, 0.9) 100%
-              )
-            `,
-          }}
-        />
-        {/* Side vignettes */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(ellipse at center,
-                transparent 40%,
-                rgba(4, 12, 26, 0.6) 100%
-              )
-            `,
-          }}
-        />
-      </div>
+      {/* ── Gradient vignettes ── */}
+      <div
+        className="absolute inset-0 z-[2] pointer-events-none"
+        style={{
+          background: `linear-gradient(
+            to bottom,
+            rgba(8,12,18,0.94) 0%,
+            rgba(8,12,18,0.42) 28%,
+            rgba(8,12,18,0.42) 62%,
+            rgba(8,12,18,0.97) 100%
+          )`,
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-0 z-[2] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at 60% 50%, transparent 25%, rgba(8,12,18,0.72) 100%)" }}
+        aria-hidden="true"
+      />
 
-      {/* ── Hero content ─── */}
-      <div className="relative z-10 container-wide flex flex-col justify-center min-h-dvh py-24 pt-36">
-        {/* Pre-headline badge */}
+      {/* ── Left gold accent line ── */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-px z-[3] pointer-events-none"
+        style={{ background: "linear-gradient(to bottom, transparent 8%, rgba(196,154,42,0.5) 32%, rgba(196,154,42,0.5) 68%, transparent 92%)" }}
+        aria-hidden="true"
+      />
+
+      {/* ── HUD status bar ── */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 1.0, duration: 0.5 }}
+        className="absolute top-28 left-6 lg:left-[4.5rem] z-10 hidden lg:flex items-center gap-2.5"
+        aria-hidden="true"
+      >
+        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#16a34a", animation: "hud-pulse 2.4s ease-in-out infinite" }} />
+        <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.5625rem", letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(196,154,42,0.65)" }}>
+          Sys: Active · LA Operations Center
+        </span>
+      </motion.div>
+
+      {/* ── Hero content ── */}
+      <div className="relative z-10 container-wide flex flex-col justify-center min-h-dvh py-24 pt-36 lg:pt-40">
+
+        {/* Corner brackets */}
+        <div className="absolute top-[8.5rem] left-4 lg:left-[3.5rem] w-5 h-5 border-t border-l border-[#c49a2a]/45 pointer-events-none" aria-hidden="true" />
+        <div className="absolute bottom-16 right-4 lg:right-[3.5rem] w-5 h-5 border-b border-r border-[#c49a2a]/45 pointer-events-none" aria-hidden="true" />
+
+        {/* Overline */}
         <motion.div
-          {...fadeUp}
-          transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="flex items-center gap-2.5 mb-6"
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.55, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="flex items-center gap-3 mb-7"
         >
-          <div className="w-5 h-px bg-[#c49a2a]" />
-          <span className="label-overline text-[#c49a2a]">
-            Professional Security Services
-          </span>
+          <div className="w-8 h-px bg-[#c49a2a]" />
+          <span className="label-overline">Professional Security Services</span>
+          <div className="w-5 h-px bg-[#c49a2a]/35" />
         </motion.div>
 
-        {/* Main headline */}
-        <motion.h1
-          {...fadeUp}
-          transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="max-w-3xl mb-6"
-        >
-          <span
-            className="display-hero block text-[clamp(3.5rem,10vw,8.5rem)] text-[#edf2f7] leading-[0.88]"
+        {/* Headline line 1 */}
+        <div className="overflow-hidden mb-1" style={{ perspective: "800px" }}>
+          <motion.h1
+            className="display-hero text-[#edf2f7] leading-[0.88]"
+            style={{ fontSize: "clamp(3.75rem, 10.5vw, 9rem)" }}
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.12, delayChildren: 0.35 } } }}
           >
-            {HERO_HEADLINE_TOP}
-          </span>
-          <span
-            className="display-hero block text-[clamp(3.5rem,10vw,8.5rem)] leading-[0.88]"
+            {LINE1.map((word, i) => (
+              <motion.span
+                key={i}
+                variants={wordVariant}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                style={{ display: "inline-block", transformOrigin: "50% 100%", marginRight: "0.2em" }}
+              >
+                {word}
+              </motion.span>
+            ))}
+          </motion.h1>
+        </div>
+
+        {/* Headline line 2 — gold outline */}
+        <div className="overflow-hidden mb-8" style={{ perspective: "800px" }}>
+          <motion.div
+            className="display-hero leading-[0.88]"
             style={{
-              WebkitTextStroke: "1px rgba(196, 154, 42, 0.6)",
+              fontSize: "clamp(3.75rem, 10.5vw, 9rem)",
+              WebkitTextStroke: "1.5px rgba(196,154,42,0.65)",
               color: "transparent",
             }}
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.12, delayChildren: 0.58 } } }}
           >
-            {HERO_HEADLINE_BOTTOM}
-          </span>
-        </motion.h1>
+            {LINE2.map((word, i) => (
+              <motion.span
+                key={i}
+                variants={wordVariant}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                style={{ display: "inline-block", transformOrigin: "50% 100%", marginRight: "0.2em" }}
+              >
+                {word}
+              </motion.span>
+            ))}
+          </motion.div>
+        </div>
+
+        {/* Gold divider */}
+        <motion.div
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={{ scaleX: 1, opacity: 1 }}
+          transition={{ delay: 0.95, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          style={{ transformOrigin: "left" }}
+          className="w-20 h-px bg-[#c49a2a] mb-7"
+        />
 
         {/* Subheadline */}
         <motion.p
-          {...fadeUp}
-          transition={{ duration: 0.7, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="max-w-xl text-[1.0625rem] text-[#9fb5cb] leading-relaxed mb-10 font-[var(--font-sans)] font-light"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 1.05, ease: [0.22, 1, 0.36, 1] }}
+          className="max-w-[480px] text-[1.0625rem] text-[#7a9ab8] leading-relaxed mb-9"
+          style={{ fontFamily: "var(--font-sans)", fontWeight: 300 }}
         >
-          {HERO_SUBHEADLINE}
+          In a world where risk is constantly changing, Stratton Security Group
+          is your most reliable security partner — protecting people, assets,
+          and peace of mind across Southern California.
         </motion.p>
 
         {/* CTAs */}
         <motion.div
-          {...fadeUp}
-          transition={{ duration: 0.6, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col sm:flex-row gap-3 mb-16"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1.15, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col sm:flex-row gap-3 mb-14"
         >
           <Link href="/contact" className="btn-primary group text-sm px-7 py-4">
             Request a Free Assessment
-            <ArrowRight
-              size={15}
-              className="transition-transform group-hover:translate-x-1"
-            />
+            <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
           </Link>
-          <a
-            href={`tel:${SITE_CONFIG.phoneE164}`}
-            className="btn-secondary group text-sm px-7 py-4"
-          >
+          <a href={`tel:${SITE_CONFIG.phoneE164}`} className="btn-secondary group text-sm px-7 py-4">
             <Phone size={14} />
             {SITE_CONFIG.phone}
           </a>
@@ -196,14 +221,15 @@ export default function HeroSection() {
 
         {/* Trust signals */}
         <motion.div
-          {...fadeUp}
-          transition={{ duration: 0.6, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 1.3 }}
           className="flex flex-wrap gap-x-6 gap-y-2"
         >
           {TRUST_SIGNALS.map((signal, i) => (
             <div key={i} className="flex items-center gap-2">
               <div className="w-1 h-1 rounded-full bg-[#c49a2a]" />
-              <span className="text-[0.75rem] text-[#7a9ab8] tracking-wide">
+              <span className="text-[0.75rem] text-[#4a6880] tracking-wide" style={{ fontFamily: "var(--font-sans)" }}>
                 {signal}
               </span>
             </div>
@@ -211,29 +237,29 @@ export default function HeroSection() {
         </motion.div>
       </div>
 
-      {/* ── Scroll indicator ─── */}
-      {!shouldReduceMotion && (
+      {/* ── Scroll indicator ── */}
+      {!prefersReduced && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5"
+          transition={{ delay: 1.7 }}
+          className="absolute bottom-7 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5"
           aria-hidden="true"
         >
-          <span className="text-[0.5625rem] text-[#4a6880] tracking-[0.2em] uppercase">
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.5rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "#4a6880" }}>
             Scroll
           </span>
-          <motion.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <ChevronDown size={16} className="text-[#4a6880]" />
+          <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>
+            <ChevronDown size={15} className="text-[#4a6880]" />
           </motion.div>
         </motion.div>
       )}
 
-      {/* ── Gold separator line ─── */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#c49a2a]/30 to-transparent" />
+      {/* ── Bottom separator ── */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-px z-10 pointer-events-none"
+        style={{ background: "linear-gradient(to right, transparent, rgba(196,154,42,0.4) 30%, rgba(196,154,42,0.4) 70%, transparent)" }}
+      />
     </section>
   );
 }
